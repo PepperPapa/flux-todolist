@@ -1,13 +1,9 @@
 var React = require("react");
 var ReactDOM = require("react-dom");
 
-var Test = React.createClass({
-    render: function() {
-      return <h1>TODO LIST APP</h1>;
-    }
-});
+var TodoApp = require("./components/TodoApp");
 
 ReactDOM.render(
-  <Test />,
+  <TodoApp />,
   document.getElementById('todoapp')
 );

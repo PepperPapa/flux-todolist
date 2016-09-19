@@ -56,19 +56,9 @@
 	var React = __webpack_require__(2);
 	var ReactDOM = __webpack_require__(35);
 
-	var Test = React.createClass({
-	  displayName: "Test",
+	var TodoApp = __webpack_require__(173);
 
-	  render: function render() {
-	    return React.createElement(
-	      "h1",
-	      null,
-	      "TODO LIST APP"
-	    );
-	  }
-	});
-
-	ReactDOM.render(React.createElement(Test, null), document.getElementById('todoapp'));
+	ReactDOM.render(React.createElement(TodoApp, null), document.getElementById('todoapp'));
 
 /***/ },
 /* 2 */
@@ -21475,6 +21465,151 @@
 
 	module.exports = ReactDOMNullInputValuePropHook;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
+
+/***/ },
+/* 173 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var React = __webpack_require__(2);
+
+	var Header = __webpack_require__(174);
+	var MainSection = __webpack_require__(176);
+	var Footer = __webpack_require__(177);
+
+	var TodoApp = React.createClass({
+	  displayName: "TodoApp",
+
+	  render: function render() {
+	    return React.createElement(
+	      "div",
+	      null,
+	      React.createElement(Header, null),
+	      React.createElement(MainSection, null),
+	      React.createElement(Footer, null)
+	    );
+	  }
+	});
+
+	module.exports = TodoApp;
+
+/***/ },
+/* 174 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var React = __webpack_require__(2);
+
+	var TodoTextInput = __webpack_require__(175);
+
+	var Header = React.createClass({
+	  displayName: "Header",
+
+	  render: function render() {
+	    return React.createElement(
+	      "header",
+	      { id: "header" },
+	      React.createElement(
+	        "h1",
+	        null,
+	        "todos"
+	      ),
+	      React.createElement(TodoTextInput, {
+	        id: "new-todo",
+	        placeholder: "What needs to be done?"
+	      })
+	    );
+	  }
+	});
+
+	module.exports = Header;
+
+/***/ },
+/* 175 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var React = __webpack_require__(2);
+
+	var TodoTextInput = React.createClass({
+	  displayName: "TodoTextInput",
+
+	  render: function render() {
+	    return React.createElement("input", {
+	      id: this.props.id,
+	      placeholder: this.props.placeholder,
+	      autoFocus: true
+	    });
+	  }
+	});
+
+	module.exports = TodoTextInput;
+
+/***/ },
+/* 176 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var React = __webpack_require__(2);
+
+	var MainSection = React.createClass({
+	  displayName: "MainSection",
+
+	  render: function render() {
+	    return React.createElement(
+	      "section",
+	      { id: "main" },
+	      React.createElement("input", {
+	        id: "toggle-all",
+	        type: "checkbox"
+	      }),
+	      React.createElement(
+	        "label",
+	        { htmlFor: "toggle-all" },
+	        "Mark all as complete"
+	      ),
+	      React.createElement("ul", { id: "todo-list" })
+	    );
+	  }
+	});
+
+	module.exports = MainSection;
+
+/***/ },
+/* 177 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var React = __webpack_require__(2);
+
+	var Footer = React.createClass({
+	  displayName: "Footer",
+
+	  render: function render() {
+	    return React.createElement(
+	      "footer",
+	      { id: "footer" },
+	      React.createElement(
+	        "span",
+	        { id: "todo-count" },
+	        React.createElement(
+	          "strong",
+	          null,
+	          "test1"
+	        ),
+	        "test2"
+	      ),
+	      "test3"
+	    );
+	  }
+	});
+
+	module.exports = Footer;
 
 /***/ }
 /******/ ]);
