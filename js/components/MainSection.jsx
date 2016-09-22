@@ -6,8 +6,7 @@ var TodoItem = require("./TodoItem");
 var MainSection = React.createClass({
     render: function () {
 
-      var allTodos = [{id: 1, complete: true, text: "test"},
-                      {id: 2, complete: false, text: "app"}];
+      var allTodos = this.props.allTodos;
       var todos = [];
       for (var key in allTodos) {
         todos.push(<TodoItem key={key} todo={allTodos[key]} />);
