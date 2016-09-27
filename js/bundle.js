@@ -21482,7 +21482,6 @@
 	function getTodoState() {
 	  return {
 	    allTodos: TodoStore.getAll()
-
 	  };
 	}
 
@@ -21491,6 +21490,10 @@
 
 	  getInitialState: function getInitialState() {
 	    return getTodoState();
+	  },
+
+	  componentDidMount: function componentDidMount() {
+	    TodoStore.addChangeListener(this._onChange);
 	  },
 
 	  render: function render() {
@@ -21503,6 +21506,10 @@
 	      }),
 	      React.createElement(Footer, null)
 	    );
+	  },
+
+	  _onChange: function _onChange() {
+	    this.setState(getTodoState());
 	  }
 	});
 
@@ -22255,8 +22262,11 @@
 
 	  emitChange: function emitChange() {
 	    this.emit(CHANGE_EVENT);
-	  }
+	  },
 
+	  addChangeListener: function addChangeListener(callback) {
+	    this.on(CHANGE_EVENT, callback);
+	  }
 	});
 
 	AppDispatcher.register(function (action) {

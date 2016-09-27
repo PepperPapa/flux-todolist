@@ -20,11 +20,14 @@ var TodoStore = assign({}, EventEmitter.prototype, {
     getAll: function() {
       return _todos;
     },
-    
+
     emitChange: function() {
       this.emit(CHANGE_EVENT);
     },
 
+    addChangeListener: function(callback) {
+      this.on(CHANGE_EVENT, callback);
+    },
 });
 
 AppDispatcher.register(function(action) {

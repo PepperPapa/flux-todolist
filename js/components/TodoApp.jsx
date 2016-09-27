@@ -8,13 +8,16 @@ var TodoStore = require("../stores/TodoStore.js");
 function getTodoState() {
   return {
     allTodos: TodoStore.getAll(),
-
   }
 }
 
 var TodoApp = React.createClass({
   getInitialState: function() {
       return getTodoState();
+  },
+
+  componentDidMount: function() {
+      TodoStore.addChangeListener(this._onChange);
   },
 
   render: function() {
@@ -27,6 +30,10 @@ var TodoApp = React.createClass({
         <Footer />
       </div>
     );
+  },
+
+  _onChange: function() {
+    this.setState(getTodoState());
   }
 });
 
