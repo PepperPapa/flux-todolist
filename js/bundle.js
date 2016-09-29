@@ -21481,7 +21481,8 @@
 
 	function getTodoState() {
 	  return {
-	    allTodos: TodoStore.getAll()
+	    allTodos: TodoStore.getAll(),
+	    areAllComplete: TodoStore.areAllComplete()
 	  };
 	}
 
@@ -21502,9 +21503,10 @@
 	      null,
 	      React.createElement(Header, null),
 	      React.createElement(MainSection, {
-	        allTodos: this.state.allTodos
+	        allTodos: this.state.allTodos,
+	        areAllComplete: this.state.areAllComplete
 	      }),
-	      React.createElement(Footer, null)
+	      React.createElement(Footer, { allTodos: this.state.allTodos })
 	    );
 	  },
 
@@ -21572,9 +21574,32 @@
 	    });
 	  },
 
+	  toggleComplete: function toggleComplete(todo) {
+	    var id = todo.id;
+	    var actionType = todo.complete ? TodoConstants.TODO_UNDO_COMPLETE : TodoConstants.TODO_COMPLETE;
+
+	    AppDispatcher.dispatch({
+	      actionType: actionType,
+	      id: id
+	    });
+	  },
+
 	  toggleCompleteAll: function toggleCompleteAll() {
 	    AppDispatcher.dispatch({
 	      actionType: TodoConstants.TODO_TOGGLE_COMPLETE_ALL
+	    });
+	  },
+
+	  destroy: function destroy(id) {
+	    AppDispatcher.dispatch({
+	      actionType: TodoConstants.TODO_DESTROY,
+	      id: id
+	    });
+	  },
+
+	  destroyCompleted: function destroyCompleted() {
+	    AppDispatcher.dispatch({
+	      actionType: TodoConstants.TODO_DESTROY_COMPLETED
 	    });
 	  }
 
@@ -21915,6 +21940,8 @@
 
 	module.exports = keyMirror({
 	  TODO_CREATE: null,
+	  TODO_UNDO_COMPLETE: null,
+	  TODO_COMPLETE: null,
 	  TODO_TOGGLE_COMPLETE_ALL: null
 	});
 
@@ -22092,6 +22119,7 @@
 	var classNames = __webpack_require__(185);
 
 	var TodoTextInput = __webpack_require__(182);
+	var TodoActions = __webpack_require__(175);
 
 	var TodoItem = React.createClass({
 	  displayName: "TodoItem",
@@ -22112,23 +22140,34 @@
 	      { className: classNames({
 	          "completed": todo.complete,
 	          "editing": this.state.isEditing
-	        }) },
+	        }),
+	        key: todo.id },
 	      React.createElement(
 	        "div",
 	        { className: "view" },
 	        React.createElement("input", {
 	          className: "toggle",
-	          type: "checkbox"
+	          type: "checkbox",
+	          checked: todo.complete,
+	          onChange: this._onToggleComplete
 	        }),
 	        React.createElement(
 	          "label",
 	          null,
 	          todo.text
 	        ),
-	        React.createElement("button", { className: "destroy" })
+	        React.createElement("button", { className: "destroy", onClick: this._onDestroyClick })
 	      ),
 	      input
 	    );
+	  },
+
+	  _onToggleComplete: function _onToggleComplete() {
+	    TodoActions.toggleComplete(this.props.todo);
+	  },
+
+	  _onDestroyClick: function _onDestroyClick() {
+	    TodoActions.destroy(this.props.todo.id);
 	  }
 	});
 
@@ -22211,6 +22250,37 @@
 	  displayName: "Footer",
 
 	  render: function render() {
+	    var allTodos = this.props.allTodos;
+	    var total = Object.keys(allTodos).length;
+
+	    if (total === 0) {
+	      return null;
+	    }
+
+	    var completed = 0;
+	    for (var key in allTodos) {
+	      if (allTodos[key].completed) {
+	        completed++;
+	      }
+	    }
+
+	    var clearCompletedButton;
+	    if (completed) {
+	      clearCompletedButton = React.createElement(
+	        "button",
+	        {
+	          id: "clear-completed",
+	          onClick: this._onClearCompletedClick },
+	        "clear completed (",
+	        completed,
+	        ")"
+	      );
+	    }
+
+	    var itemsLeft = total - completed;
+	    var itemsLeftPhrase = itemsLeft === 1 ? ' item' : ' items';
+	    itemsLeftPhrase += "left";
+
 	    return React.createElement(
 	      "footer",
 	      { id: "footer" },
@@ -22220,12 +22290,16 @@
 	        React.createElement(
 	          "strong",
 	          null,
-	          "test1"
+	          itemsLeft
 	        ),
-	        "test2"
+	        itemsLeftPhrase
 	      ),
-	      "test3"
+	      clearCompletedButton
 	    );
+	  },
+
+	  _onClearCompletedClick: function _onClearCompletedClick() {
+	    TodoActions.destroyCompleted();
 	  }
 	});
 
@@ -22255,7 +22329,38 @@
 	  };
 	}
 
+	function update(id, updates) {
+	  _todos[id].complete = updates.complete;
+	}
+
+	function updateAll(updates) {
+	  for (var id in _todos) {
+	    update(id, updates);
+	  }
+	}
+
+	function destroy(id) {
+	  delete _todos[id];
+	}
+
+	function destroyCompleted() {
+	  for (var id in _todos) {
+	    if (_todos[id].complete) {
+	      destroy(id);
+	    }
+	  }
+	}
+
 	var TodoStore = assign({}, EventEmitter.prototype, {
+	  areAllComplete: function areAllComplete() {
+	    for (var id in _todos) {
+	      if (!_todos[id].complete) {
+	        return false;
+	      }
+	    }
+	    return true;
+	  },
+
 	  getAll: function getAll() {
 	    return _todos;
 	  },
@@ -22280,6 +22385,29 @@
 	        TodoStore.emitChange();
 	      }
 	      break;
+	    case TodoConstants.TODO_UNDO_COMPLETE:
+	      update(action.id, { complete: false });
+	      TodoStore.emitChange();
+	      break;
+	    case TodoConstants.TODO_COMPLETE:
+	      update(action.id, { complete: true });
+	      TodoStore.emitChange();
+	      break;
+	    case TodoConstants.TODO_TOGGLE_COMPLETE_ALL:
+	      if (TodoStore.areAllComplete()) {
+	        updateAll({ complete: false });
+	      } else {
+	        updateAll({ complete: true });
+	      }
+	      TodoStore.emitChange();
+	      break;
+	    case TodoConstants.TODO_DESTROY:
+	      destroy(action.id);
+	      TodoStore.emitChange();
+	      break;
+	    case TodoConstants.TODO_DESTROY_COMPLETED:
+	      destroyCompleted();
+	      TodoStore.emitChange();
 	    default:
 
 	  }
