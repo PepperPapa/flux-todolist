@@ -17,7 +17,7 @@ function create(text) {
 }
 
 function update(id, updates) {
-  _todos[id].complete = updates.complete;
+  _todos[id] = assign({}, _todos[id], updates);
 }
 
 function updateAll(updates) {
@@ -59,6 +59,10 @@ var TodoStore = assign({}, EventEmitter.prototype, {
     addChangeListener: function(callback) {
       this.on(CHANGE_EVENT, callback);
     },
+
+    removeChangeListener: function(callback) {
+      this.removeListener(CHANGE_EVENT, callback);
+    }
 });
 
 AppDispatcher.register(function(action) {
@@ -88,6 +92,13 @@ AppDispatcher.register(function(action) {
       }
       TodoStore.emitChange();
       break;
+    case TodoConstants.TODO_UPDATE_TEXT:
+      text = action.text.trim();
+      if (text !== "") {
+        update(action.id, {text: text});
+        TodoStore.emitChange();
+      }
+      break;
     case TodoConstants.TODO_DESTROY:
       destroy(action.id);
       TodoStore.emitChange();
@@ -95,6 +106,7 @@ AppDispatcher.register(function(action) {
     case TodoConstants.TODO_DESTROY_COMPLETED:
       destroyCompleted();
       TodoStore.emitChange();
+      break;
     default:
 
   }

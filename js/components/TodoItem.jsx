@@ -1,10 +1,15 @@
 var React = require("react");
+var ReactPropTypes = React.PropTypes;
 var classNames = require("classnames");
 
 var TodoTextInput = require("./TodoTextInput");
 var TodoActions = require("../actions/TodoActions");
 
 var TodoItem = React.createClass({
+  propTypes: {
+      todo: ReactPropTypes.object.isRequired
+  },
+
   getInitialState: function() {
     return {isEditing: false};
   },
@@ -14,7 +19,10 @@ var TodoItem = React.createClass({
 
     var input;
     if (this.state.isEditing) {
-      input = <TodoTextInput className="edit" value={todo.text} />;
+      input = <TodoTextInput
+                className="edit"
+                onSave={this._onSave}
+                value={todo.text} />;
     }
     return (
       <li className={classNames({
@@ -26,10 +34,13 @@ var TodoItem = React.createClass({
           <input
             className="toggle"
             type="checkbox"
-            checked={todo.complete}
+            // 直接使用todo.complete, 控制台会有警告
+            // Warning: TodoItem is changing a controlled input of type checkbox
+            // to be uncontrolled.
+            checked={todo.complete ? true : false}
             onChange={this._onToggleComplete}
           />
-          <label>
+          <label onDoubleClick={this._onDoubleClick}>
             {todo.text}
           </label>
           <button className="destroy" onClick={this._onDestroyClick} />
@@ -41,6 +52,15 @@ var TodoItem = React.createClass({
 
   _onToggleComplete: function() {
     TodoActions.toggleComplete(this.props.todo);
+  },
+
+  _onDoubleClick: function() {
+    this.setState({isEditing: true});
+  },
+
+  _onSave: function(text) {
+    TodoActions.updateText(this.props.todo.id, text);
+    this.setState({isEditing: false});
   },
 
   _onDestroyClick: function() {

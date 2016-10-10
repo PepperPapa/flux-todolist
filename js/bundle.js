@@ -21497,6 +21497,10 @@
 	    TodoStore.addChangeListener(this._onChange);
 	  },
 
+	  componentWillUnmount: function componentWillUnmount() {
+	    TodoStore.removeChangeListener(this._onChange);
+	  },
+
 	  render: function render() {
 	    return React.createElement(
 	      "div",
@@ -21570,6 +21574,14 @@
 	  create: function create(text) {
 	    AppDispatcher.dispatch({
 	      actionType: TodoConstants.TODO_CREATE,
+	      text: text
+	    });
+	  },
+
+	  updateText: function updateText(id, text) {
+	    AppDispatcher.dispatch({
+	      actionType: TodoConstants.TODO_UPDATE_TEXT,
+	      id: id,
 	      text: text
 	    });
 	  },
@@ -21940,9 +21952,12 @@
 
 	module.exports = keyMirror({
 	  TODO_CREATE: null,
-	  TODO_UNDO_COMPLETE: null,
 	  TODO_COMPLETE: null,
-	  TODO_TOGGLE_COMPLETE_ALL: null
+	  TODO_DESTROY: null,
+	  TODO_DESTROY_COMPLETED: null,
+	  TODO_TOGGLE_COMPLETE_ALL: null,
+	  TODO_UNDO_COMPLETE: null,
+	  TODO_UPDATE_TEXT: null
 	});
 
 /***/ },
@@ -22011,11 +22026,20 @@
 	"use strict";
 
 	var React = __webpack_require__(2);
+	var ReactPropTypes = React.PropTypes;
 
 	var ENTER_KEY_CODE = 13;
 
 	var TodoTextInput = React.createClass({
 	  displayName: "TodoTextInput",
+
+	  propTypes: {
+	    className: ReactPropTypes.string,
+	    id: ReactPropTypes.string,
+	    placeholder: ReactPropTypes.string,
+	    onSave: ReactPropTypes.func.isRequired,
+	    value: ReactPropTypes.string
+	  },
 
 	  getInitialState: function getInitialState() {
 	    return {
@@ -22065,6 +22089,7 @@
 	"use strict";
 
 	var React = __webpack_require__(2);
+	var ReactPropTypes = React.PropTypes;
 
 	var TodoActions = __webpack_require__(175);
 	var TodoItem = __webpack_require__(184);
@@ -22072,8 +22097,15 @@
 	var MainSection = React.createClass({
 	  displayName: "MainSection",
 
-	  render: function render() {
+	  propTypes: {
+	    allTodos: ReactPropTypes.object.isRequired,
+	    areAllComplete: ReactPropTypes.bool.isRequired
+	  },
 
+	  render: function render() {
+	    if (Object.keys(this.props.allTodos).length < 1) {
+	      return null;
+	    }
 	    var allTodos = this.props.allTodos;
 	    var todos = [];
 	    for (var key in allTodos) {
@@ -22116,6 +22148,7 @@
 	"use strict";
 
 	var React = __webpack_require__(2);
+	var ReactPropTypes = React.PropTypes;
 	var classNames = __webpack_require__(185);
 
 	var TodoTextInput = __webpack_require__(182);
@@ -22123,6 +22156,10 @@
 
 	var TodoItem = React.createClass({
 	  displayName: "TodoItem",
+
+	  propTypes: {
+	    todo: ReactPropTypes.object.isRequired
+	  },
 
 	  getInitialState: function getInitialState() {
 	    return { isEditing: false };
@@ -22133,7 +22170,10 @@
 
 	    var input;
 	    if (this.state.isEditing) {
-	      input = React.createElement(TodoTextInput, { className: "edit", value: todo.text });
+	      input = React.createElement(TodoTextInput, {
+	        className: "edit",
+	        onSave: this._onSave,
+	        value: todo.text });
 	    }
 	    return React.createElement(
 	      "li",
@@ -22147,13 +22187,16 @@
 	        { className: "view" },
 	        React.createElement("input", {
 	          className: "toggle",
-	          type: "checkbox",
-	          checked: todo.complete,
+	          type: "checkbox"
+	          // 直接使用todo.complete, 控制台会有警告
+	          // Warning: TodoItem is changing a controlled input of type checkbox
+	          // to be uncontrolled.
+	          , checked: todo.complete ? true : false,
 	          onChange: this._onToggleComplete
 	        }),
 	        React.createElement(
 	          "label",
-	          null,
+	          { onDoubleClick: this._onDoubleClick },
 	          todo.text
 	        ),
 	        React.createElement("button", { className: "destroy", onClick: this._onDestroyClick })
@@ -22164,6 +22207,15 @@
 
 	  _onToggleComplete: function _onToggleComplete() {
 	    TodoActions.toggleComplete(this.props.todo);
+	  },
+
+	  _onDoubleClick: function _onDoubleClick() {
+	    this.setState({ isEditing: true });
+	  },
+
+	  _onSave: function _onSave(text) {
+	    TodoActions.updateText(this.props.todo.id, text);
+	    this.setState({ isEditing: false });
 	  },
 
 	  _onDestroyClick: function _onDestroyClick() {
@@ -22245,9 +22297,15 @@
 	"use strict";
 
 	var React = __webpack_require__(2);
+	var ReactPropTypes = React.PropTypes;
+	var TodoActions = __webpack_require__(175);
 
 	var Footer = React.createClass({
 	  displayName: "Footer",
+
+	  propTypes: {
+	    allTodos: ReactPropTypes.object.isRequired
+	  },
 
 	  render: function render() {
 	    var allTodos = this.props.allTodos;
@@ -22259,10 +22317,14 @@
 
 	    var completed = 0;
 	    for (var key in allTodos) {
-	      if (allTodos[key].completed) {
+	      if (allTodos[key].complete) {
 	        completed++;
 	      }
 	    }
+
+	    var itemsLeft = total - completed;
+	    var itemsLeftPhrase = itemsLeft === 1 ? ' item' : ' items';
+	    itemsLeftPhrase += "left";
 
 	    var clearCompletedButton;
 	    if (completed) {
@@ -22271,15 +22333,11 @@
 	        {
 	          id: "clear-completed",
 	          onClick: this._onClearCompletedClick },
-	        "clear completed (",
+	        "Clear completed (",
 	        completed,
 	        ")"
 	      );
 	    }
-
-	    var itemsLeft = total - completed;
-	    var itemsLeftPhrase = itemsLeft === 1 ? ' item' : ' items';
-	    itemsLeftPhrase += "left";
 
 	    return React.createElement(
 	      "footer",
@@ -22330,7 +22388,7 @@
 	}
 
 	function update(id, updates) {
-	  _todos[id].complete = updates.complete;
+	  _todos[id] = assign({}, _todos[id], updates);
 	}
 
 	function updateAll(updates) {
@@ -22371,6 +22429,10 @@
 
 	  addChangeListener: function addChangeListener(callback) {
 	    this.on(CHANGE_EVENT, callback);
+	  },
+
+	  removeChangeListener: function removeChangeListener(callback) {
+	    this.removeListener(CHANGE_EVENT, callback);
 	  }
 	});
 
@@ -22401,6 +22463,13 @@
 	      }
 	      TodoStore.emitChange();
 	      break;
+	    case TodoConstants.TODO_UPDATE_TEXT:
+	      text = action.text.trim();
+	      if (text !== "") {
+	        update(action.id, { text: text });
+	        TodoStore.emitChange();
+	      }
+	      break;
 	    case TodoConstants.TODO_DESTROY:
 	      destroy(action.id);
 	      TodoStore.emitChange();
@@ -22408,6 +22477,7 @@
 	    case TodoConstants.TODO_DESTROY_COMPLETED:
 	      destroyCompleted();
 	      TodoStore.emitChange();
+	      break;
 	    default:
 
 	  }

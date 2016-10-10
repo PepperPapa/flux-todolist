@@ -1,11 +1,19 @@
 var React = require("react");
+var ReactPropTypes = React.PropTypes;
 
 var TodoActions = require("../actions/TodoActions");
 var TodoItem = require("./TodoItem");
 
 var MainSection = React.createClass({
-    render: function () {
+    propTypes: {
+      allTodos: ReactPropTypes.object.isRequired,
+      areAllComplete: ReactPropTypes.bool.isRequired
+    },
 
+    render: function () {
+      if (Object.keys(this.props.allTodos).length < 1) {
+        return null;
+      }
       var allTodos = this.props.allTodos;
       var todos = [];
       for (var key in allTodos) {
